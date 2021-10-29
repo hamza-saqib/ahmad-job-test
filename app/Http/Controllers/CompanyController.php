@@ -4,6 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use Illuminate\Http\Request;
+use App\Mail\NewCompanyMail;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+use Validator;
+use Illuminate\Support\Facades\Hash;
+use Mail;
 
 class CompanyController extends Controller
 {
@@ -14,8 +20,7 @@ class CompanyController extends Controller
      */
     public function index()
     {
-        $companies = Company::all()->toArray();
-        return array_reverse($companies);
+        return $companies = Company::all();
     }
 
 
@@ -28,28 +33,59 @@ class CompanyController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required',
-            'logo' => '100x100',
-        ]);
+        $rules = array(
+            'name' => 'required|max:50',
+            'email' => 'required|max:50|unique:companies',
+            'website' => 'required|max:50',
+            'logo' => 'required|max:1000kb|mimes:jpeg,jpg,png|dimensions:max_width=100,min_width=100',
+        );
 
-        if($request->hasfile('logo'))
+        $attributeNames = [
+            'name' => 'Company Name',
+            'email' => 'Email',
+            'website' => 'Website',
+            'logo' => 'Logo',
+        ];
+
+        $messages = array(
+            'email.unique_with' => 'Account No. Already Exist!',
+            'logo.dimensions' => 'Image size should be Max Width 100 and Min Width 100 size',
+        );
+        $validator = Validator::make($request->all(), $rules, $messages);
+
+        $validator->setAttributeNames($attributeNames);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ]);
+        } 
+        else 
         {
-            $logo = $request->logo;
-            $logo_file_name = time() . '_'. $request->name . '.'. $logo->getClientOriginalExtension();
-            $logo->move('/storage/app/public/', $logo_file_name);
-
+            if($request->hasfile('logo'))
+            {
+                $logo = $request->logo;
+                $logo_file_name = time() . '_'. $request->name . '.'. $logo->getClientOriginalExtension();
+                $logo->move('images/', $logo_file_name);
+    
+            }
+    
+            $company = new Company([
+                'name' => $request->input('name'),
+                'email' => $request->input('email'),
+                'logo' => $logo_file_name,
+                'website' => $request->input('website'),
+            ]);
+            $company->save();
+            Mail::to($company->email)->send(new NewCompanyMail($company));
+            return response()->json([
+                'success' => true,
+                'message' => "Company Created",
+            ]);
         }
-
-        $company = new Company([
-            'name' => $request->input('name'),
-            'email' => $request->input('email'),
-            'logo' => $logo_file_name,
-            'website' => $request->input('website'),
-        ]);
-        $company->save();
-
-        return response()->json('Company created.');
+    
+        
     }
 
     /**
@@ -58,16 +94,9 @@ class CompanyController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show()
     {
-        $company = Company::find($id);
-        if($company){
-            return response()->json($company);
-        }
-        else{
-            return response()->json('Company not found.');
-        }
-
+        return Company::paginate(10);
     }
 
 
@@ -81,26 +110,45 @@ class CompanyController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $request->validate([
-            'name' => 'required',
-            'logo' => '100x100',
-        ]);
+        // return $request;
+        $request = $request->data;
+        $rules = array(
+            'name' => 'required|max:50',
+            'email' => 'required|max:50',
+            'website' => 'required|max:50',
+        );
 
-        if($request->hasfile('logo'))
+        $attributeNames = [
+            'name' => 'Company Name',
+            'email' => 'Email',
+            'website' => 'Website',
+        ];
+
+        $messages = array(
+
+        );
+        $validator = Validator::make($request, $rules, $messages);
+
+        $validator->setAttributeNames($attributeNames);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ]);
+        } 
+        else 
         {
-            $logo = $request->logo;
-            $logo_file_name = time() . '_'. $request->name . '.'. $logo->getClientOriginalExtension();
-            $logo->move('/storage/app/public/', $logo_file_name);
-
-        }
-        
-        $company = Company::find($id);
-        if($company){
-            $company->update($request->all());
-            return response()->json('Company updated!');
-        }
-        else{
-            return response()->json('Company not found.');
+            $company = Company::find($request['id']);
+            $company->name = $request['name'];
+            $company->email = $request['email'];
+            $company->website = $request['website'];
+            $company->update();
+            
+            return response()->json([
+                'success' => true,
+                'message' => "Company Updated",
+            ]);
         }
 
     }
@@ -115,11 +163,23 @@ class CompanyController extends Controller
     {
         $company = Company::find($id);
         if($company){
-            $company->delete();
-            return response()->json('Company delted!');
+            $company = Company::find($id)->delete();
+            return response()->json([
+                'success' => true, 
+                'message' => "Company Deleted!",
+            ]);
         }
         else{
-            return response()->json('Company not found.');
+            return response()->json([
+                'success' => false, 
+                'message' => "Company Not Found",
+            ]);
         }
     }
+
+    public function edit($id)
+    {
+        return Company::find($id);
+    }
+
 }

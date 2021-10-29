@@ -7,7 +7,12 @@
 require('./bootstrap');
 
 window.Vue = require('vue').default;
+import MainApp from './components/pages/MainApp.vue';
+import router from './router';
+import App from './components/layouts/app.vue';
 
+//Pageination
+Vue.component('pagination', require('laravel-vue-pagination'));
 /**
  * The following block of code may be used to automatically register your
  * Vue components. It will recursively scan this directory for the Vue
@@ -28,5 +33,10 @@ Vue.component('example-component', require('./components/ExampleComponent.vue').
  */
 
 const app = new Vue({
+    router,
     el: '#app',
+    components: {
+        MainApp,
+    },
+    render: h => h(App)
 });

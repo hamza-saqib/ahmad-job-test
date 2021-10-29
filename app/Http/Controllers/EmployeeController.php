@@ -2,8 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Company;
 use App\Models\Employee;
 use Illuminate\Http\Request;
+use App\Mail\NewCompanyMail;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+use Validator;
+use Illuminate\Support\Facades\Hash;
+use Mail;
+
 
 class EmployeeController extends Controller
 {
@@ -28,22 +36,51 @@ class EmployeeController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'first_name' => 'required',
-            'last_name' => 'required',
-            'company_id' => 'required|exists:companies,id'
-        ]);
+        $rules = array(
+            'first_name' => 'required|max:50',
+            'last_name' => 'required|max:50',
+            'email' => 'required|max:50|unique:employees',
+            'phone' => 'required|max:50',
+            'company_id' => 'required|exists:companies,id',
+        );
 
-        $employee = new Employee([
-            'first_name' => $request->input('first_name'),
-            'last_name' => $request->input('last_name'),
-            'email' => $request->input('email'),
-            'phone' => $request->input('phone'),
-            'company_id' => $request->input('company_id'),
-        ]);
-        $employee->save();
+        $attributeNames = [
+            'first_name' => 'First Name',
+            'last_name' => 'Last Name',
+            'email' => 'Email',
+            'phone' => 'Phone',
+            'company_id' => 'Company',
+        ];
 
-        return response()->json('Employee created.');
+        $messages = array(
+            
+        );
+        $validator = Validator::make($request->all(), $rules, $messages);
+
+        $validator->setAttributeNames($attributeNames);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ]);
+        } 
+        else 
+        {
+            $employee = new Employee([
+                'first_name' => $request->input('first_name'),
+                'last_name' => $request->input('last_name'),
+                'email' => $request->input('email'),
+                'phone' => $request->input('phone'),
+                'company_id' => $request->input('company_id'),
+            ]);
+            $employee->save();
+            return response()->json([
+                'success' => true,
+                'message' => "Employee Created",
+            ]);
+        }
+        
     }
 
     /**
@@ -54,13 +91,7 @@ class EmployeeController extends Controller
      */
     public function show($id)
     {
-        $employee = Employee::find($id);
-        if($employee){
-            return response()->json($employee);
-        }
-        else{
-            return response()->json('Employee not found.');
-        }
+        return Employee::with('Company')->paginate(10);
 
     }
 
@@ -75,21 +106,50 @@ class EmployeeController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $request->validate([
-            'first_name' => 'required',
-            'last_name' => 'required',
-            'company_id' => 'required|exists:companies,id'
-        ]);
+        $request = $request->data;
+        $rules = array(
+            'first_name' => 'required|max:50',
+            'last_name' => 'required|max:50',
+            'email' => 'required|max:50',
+            'phone' => 'required|max:50',
+            'company_id' => 'required|exists:companies,id',
+        );
 
-        $employee = Employee::find($id);
-        if($employee){
-            $employee->update($request->all());
-            return response()->json('Employee updated!');
-        }
-        else{
-            return response()->json('Employee not found.');
-        }
+        $attributeNames = [
+            'first_name' => 'First Name',
+            'last_name' => 'Last Name',
+            'email' => 'Email',
+            'phone' => 'Phone',
+            'company_id' => 'Company',
+        ];
 
+        $messages = array(
+            
+        );
+        $validator = Validator::make($request, $rules, $messages);
+
+        $validator->setAttributeNames($attributeNames);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ]);
+        } 
+        else 
+        {
+            $employee = Employee::find($request['id']);
+            $employee->first_name = $request['first_name'];
+            $employee->last_name = $request['last_name'];
+            $employee->email = $request['email'];
+            $employee->phone = $request['phone'];
+            $employee->company_id = $request['company_id'];
+            $employee->update();
+            return response()->json([
+                'success' => true,
+                'message' => "Employee Updated",
+            ]);
+        }
     }
 
     /**
@@ -103,10 +163,26 @@ class EmployeeController extends Controller
         $employee = Employee::find($id);
         if($employee){
             $employee->delete();
-            return response()->json('Employee delted!');
+            return response()->json([
+                'success' => true,
+                'message' => "Employee Deleted",
+            ]);
         }
         else{
-            return response()->json('Employee not found.');
+            return response()->json([
+                'success' => true,
+                'message' => "Employee Not FOund",
+            ]);
         }
+    }
+
+    public function getCompanies()
+    {
+        return Company::all();
+    }
+
+    public function edit($id)
+    {
+        return Employee::where('id', $id)->first();
     }
 }
