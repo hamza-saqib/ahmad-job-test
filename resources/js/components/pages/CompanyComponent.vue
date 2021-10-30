@@ -73,7 +73,7 @@
                             </div>
                             <div class="row">
                                 <div class="col-md-12 table-responsive">
-                                    <table class="table table-striped" style=" box-shadow: 0 8px 4px -9px black"> 
+                                    <table class="table table-striped" style=" box-shadow: 0 8px 4px -9px black">
                                         <thead >
                                         <tr class="text-center text-white bg-dark">
                                                 <td>S.No</td>
@@ -89,7 +89,7 @@
                                                 <td>{{index + 1}}</td>
                                                 <td width="60">
                                                     <a :href="'/images/'+item.logo" target="_blank">
-                                                        <img width="50" :src="'/images/'+item.logo" :alt="'item.name'">
+                                                        <img width="50" :src="'/storage/app/public/'+item.logo" :alt="'item.name'">
                                                     </a>
                                                 </td>
                                                 <td>{{item.name}}</td>
@@ -128,14 +128,14 @@
                 message: "",
                 isVisible: false
             },
-            
+
         }
     },
     components: {
         DashboardHeader,
     },
     computed:{
-    
+
     },
     methods: {
         save() {
@@ -153,7 +153,7 @@
                     this.clearForm()
                     this.errors = []
                     this.getData()
-                        
+
                 } else {
                     this.errors = res.data.errors
                 }
@@ -224,5 +224,5 @@
     mounted() {
         this.getData()
     }
-  } 
+  }
 </script>

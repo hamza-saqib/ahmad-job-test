@@ -67,7 +67,7 @@ class CompanyController extends Controller
             {
                 $logo = $request->logo;
                 $logo_file_name = time() . '_'. $request->name . '.'. $logo->getClientOriginalExtension();
-                $logo->move('images/', $logo_file_name);
+                $logo->move('storage/app/public/', $logo_file_name);
 
             }
 

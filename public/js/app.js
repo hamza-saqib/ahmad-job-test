@@ -40675,7 +40675,8 @@ var render = function () {
                                       _c("img", {
                                         attrs: {
                                           width: "50",
-                                          src: "/images/" + item.logo,
+                                          src:
+                                            "/storage/app/public/" + item.logo,
                                           alt: "item.name",
                                         },
                                       }),
