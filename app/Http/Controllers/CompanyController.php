@@ -35,9 +35,7 @@ class CompanyController extends Controller
     {
         $rules = array(
             'name' => 'required|max:50',
-            'email' => 'required|max:50|unique:companies',
-            'website' => 'required|max:50',
-            'logo' => 'required|max:1000kb|mimes:jpeg,jpg,png|dimensions:max_width=100,min_width=100',
+            'logo' => 'dimensions:min_width=100',
         );
 
         $attributeNames = [
@@ -48,9 +46,11 @@ class CompanyController extends Controller
         ];
 
         $messages = array(
+            'name.required' => 'name is required',
             'email.unique_with' => 'Account No. Already Exist!',
             'logo.dimensions' => 'Image size should be Max Width 100 and Min Width 100 size',
         );
+
         $validator = Validator::make($request->all(), $rules, $messages);
 
         $validator->setAttributeNames($attributeNames);
@@ -60,17 +60,17 @@ class CompanyController extends Controller
                 'success' => false,
                 'errors' => $validator->errors(),
             ]);
-        } 
-        else 
+        }
+        else
         {
             if($request->hasfile('logo'))
             {
                 $logo = $request->logo;
                 $logo_file_name = time() . '_'. $request->name . '.'. $logo->getClientOriginalExtension();
                 $logo->move('images/', $logo_file_name);
-    
+
             }
-    
+
             $company = new Company([
                 'name' => $request->input('name'),
                 'email' => $request->input('email'),
@@ -84,8 +84,8 @@ class CompanyController extends Controller
                 'message' => "Company Created",
             ]);
         }
-    
-        
+
+
     }
 
     /**
@@ -136,15 +136,15 @@ class CompanyController extends Controller
                 'success' => false,
                 'errors' => $validator->errors(),
             ]);
-        } 
-        else 
+        }
+        else
         {
             $company = Company::find($request['id']);
             $company->name = $request['name'];
             $company->email = $request['email'];
             $company->website = $request['website'];
             $company->update();
-            
+
             return response()->json([
                 'success' => true,
                 'message' => "Company Updated",
@@ -165,13 +165,13 @@ class CompanyController extends Controller
         if($company){
             $company = Company::find($id)->delete();
             return response()->json([
-                'success' => true, 
+                'success' => true,
                 'message' => "Company Deleted!",
             ]);
         }
         else{
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => "Company Not Found",
             ]);
         }

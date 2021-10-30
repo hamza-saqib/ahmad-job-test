@@ -31,8 +31,8 @@ class NewCompanyMail extends Mailable
     {
         $Company = $this->Company;
         return $this->from('mailtrap@mailtrap.com')
-                    ->subject('New Company')
-                    ->view('new-company-registered')
+                    ->subject('New Company Created')
+                    ->view('emails/new-company-registered')
                     ->with([
                         'company'          => $Company,
                     ]);
